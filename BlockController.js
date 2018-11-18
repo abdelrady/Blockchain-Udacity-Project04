@@ -22,8 +22,9 @@ class BlockController {
      * Implement a GET Endpoint to retrieve a block by index, url: "/api/block/:index"
      */
     getBlockByIndex() {
-        this.app.get("/api/block/:index", (req, res) => {
+        this.app.get("/block/:index", (req, res) => {
             // Add your code here
+			res.send(this.blocks[req.params.index]);
         });
     }
 
@@ -31,10 +32,25 @@ class BlockController {
      * Implement a POST Endpoint to add a new Block, url: "/api/block"
      */
     postNewBlock() {
-        this.app.post("/api/block", (req, res) => {
-            // Add your code here
+        this.app.post("/block", (req, res) => {
+			if(!req.body.data){
+				res.json({});
+			}
+			
+            var newBlock = this.addNewBlock(req.body.data);
+			
+			res.json(newBlock);
         });
     }
+	
+	addNewBlock(data){
+			var lastHeight = this.blocks.length == 0 ? -1 : this.blocks[this.blocks.length - 1].height;
+			var newBlock = new BlockClass.Block(data);
+			newBlock.height = lastHeight + 1;
+			newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
+			this.blocks.push(newBlock);
+			return newBlock;
+	}
 
     /**
      * Help method to inizialized Mock dataset, adds 10 test blocks to the blocks array
@@ -42,10 +58,7 @@ class BlockController {
     initializeMockData() {
         if(this.blocks.length === 0){
             for (let index = 0; index < 10; index++) {
-                let blockAux = new BlockClass.Block(`Test Data #${index}`);
-                blockAux.height = index;
-                blockAux.hash = SHA256(JSON.stringify(blockAux)).toString();
-                this.blocks.push(blockAux);
+				this.addNewBlock(`Test Data #${index}`);
             }
         }
     }
