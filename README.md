@@ -65,7 +65,10 @@ HTTP Payload
 
 ## Authors
 
-* **Abdelrady Tantawy** - *Initial work* 
+* **Abdelrady Tantawy** - *Initial Work* 
+
+* **Jose Perera Morales** - *Adding Boilerplate* 
+
 
 ## License
 
@@ -73,4 +76,4 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-* Thanks for Udacity & MISK team for provinding code biolerplate for this project.
+* Thanks for Udacity & MISK team for provinding code boilerplate for this project.
