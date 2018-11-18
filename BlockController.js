@@ -33,11 +33,11 @@ class BlockController {
      */
     postNewBlock() {
         this.app.post("/block", (req, res) => {
-			if(!req.body.data){
-				res.json({});
+			if(!req.body.body){
+				res.status(500).send('Block can not be added if empty');
 			}
 			
-            var newBlock = this.addNewBlock(req.body.data);
+            var newBlock = this.addNewBlock(req.body.body);
 			
 			res.json(newBlock);
         });

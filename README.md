@@ -1,6 +1,4 @@
-# Project Title
-
-Project #3 - Creating Webservices
+# Project #3 - Creating Webservices with ExpressJS
 
 ## Getting Started
 
