@@ -65,7 +65,7 @@ HTTP Payload
 
 ## Authors
 
-* **Abdelrady Tantawy** - *Initial Work* 
+* **Abdelrady Tantawy** - *Adding code for endponts and updating readme.md* 
 
 * **Jose Perera Morales** - *Adding Boilerplate* 
 
