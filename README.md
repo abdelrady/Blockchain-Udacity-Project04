@@ -47,6 +47,15 @@ GET /block/:index
 
 this will get a block at specific chain index.
 
+If index is correct and found in the chain then api will return this sample JSON response
+{
+"hash": "afadc5cf4ab5ff858cc1676244b56833405d1ad2a4291aca13c6d8e61daceaa8",
+"height": 0,
+"body": "A new block added from client app",
+"time": "1542559615"
+}
+
+Otherwise a 500 HTTP response with an error message will be returned from server
 
 ### 
 
@@ -57,8 +66,20 @@ POST /block
 
 HTTP Payload
 {
-"data": "A new block added from client app"
+"body": "A new block added from client app"
 }
+
+Responses
+
+If a valid block data is passed then answer should look like this JSON result
+{
+"hash": "afadc5cf4ab5ff858cc1676244b56833405d1ad2a4291aca13c6d8e61daceaa8",
+"height": 0,
+"body": "A new block added from client app",
+"time": "1542559615"
+}
+
+If empty block data passed then a 500 HTTP response with an error message will be returned from server
 ```
 
 ## Authors

@@ -23,8 +23,10 @@ class BlockController {
      */
     getBlockByIndex() {
         this.app.get("/block/:index", (req, res) => {
-            // Add your code here
-			res.send(this.blocks[req.params.index]);
+            if(req.params.index >= 0 && req.params.index < this.blocks.length){
+				res.send(this.blocks[req.params.index]);
+			}
+			res.status(500).send('Index is out of chain bound.');
         });
     }
 
@@ -47,6 +49,7 @@ class BlockController {
 			var lastHeight = this.blocks.length == 0 ? -1 : this.blocks[this.blocks.length - 1].height;
 			var newBlock = new BlockClass.Block(data);
 			newBlock.height = lastHeight + 1;
+			newBlock.previousBlockHash = this.blocks.length == 0 ? "" : this.blocks[this.blocks.length - 1].hash;
 			newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
 			this.blocks.push(newBlock);
 			return newBlock;
