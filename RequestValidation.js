@@ -1,8 +1,8 @@
 const SHA256 = require('crypto-js/sha256');
 const bitcoinMessage = require('bitcoinjs-message');
-const Blockchain = require('./Blockchain.js')
-const Block = require('./Block.js')
-
+const Blockchain = require('./Blockchain.js');
+const Block = require('./Block.js');
+const hex2ascii = require('hex2ascii');
 
 /**
  * Controller Definition to encapsulate routes to work with blocks
@@ -34,7 +34,7 @@ class RequestValidation {
         var existingRequest = self.requestObject(request.address);
         if (!existingRequest) {
             request.requestTimeStamp = new Date().getTime().toString().slice(0, -3);
-            request.message = "19xaiMqayaNrn3x7AjV5cU4Mk5f5prRVpL:1541605128:starRegistry";
+            request.message = request.address + ":" + request.requestTimeStamp + ":starRegistry";
             self.updateValidationWindow(request);
             this.mempool.push(request);
         } else {
@@ -45,7 +45,6 @@ class RequestValidation {
 
     requestObject(address) {
         var existingRequest = null;
-        console.log(this.mempool.length);
         for (var i = 0; i < this.mempool.length; i++) {
             if (this.mempool[i].address == address) {
                 existingRequest = this.mempool[i];
@@ -59,7 +58,7 @@ class RequestValidation {
         var existingRequest = null;
         for (var i = 0; i < this.mempoolValid.length; i++) {
             if (this.mempoolValid[i].status.address == address)
-                existingRequest = this.mempool[i];
+                existingRequest = this.mempoolValid[i];
         }
         return existingRequest;
     }
@@ -72,25 +71,34 @@ class RequestValidation {
 
     validateRequestByWallet(addr, signature) {
         let isValid = false;
+        let generatedStarRequest = {
+            registerStar: false,
+            status: {
+                address: addr,
+                requestTimeStamp: 0,
+                message: "",
+                validationWindow: 0,
+                messageSignature: "invalid"
+            }
+        };
         var self = this;
         var request = self.requestObject(addr);
         if (request) {
             self.updateValidationWindow(request);
+            //Update values from original request
+            generatedStarRequest.status.requestTimeStamp = request.requestTimeStamp;
+            generatedStarRequest.status.validationWindow = request.validationWindow;
+            generatedStarRequest.status.message = request.message;
+
             if (request.validationWindow > 0) {
                 isValid = bitcoinMessage.verify(request.message, request.address, signature);
                 if (isValid) {
                     self.removeValidationRequest(request.address);
-                    self.mempoolValid.push({
-                        isValid: true,
-                        registerStar: true,
-                        status: {
-                            address: request.address,
-                            requestTimeStamp: request.requestTimeStamp,
-                            message: request.message,
-                            validationWindow: request.validationWindow,
-                            messageSignature: isValid
-                        }
-                    });
+                    //Update valid request values
+                    generatedStarRequest.registerStar = true;
+                    generatedStarRequest.status.validationWindow = self.TimeoutValidRequestsWindowTime;
+                    generatedStarRequest.status.messageSignature = "valid";
+                    self.mempoolValid.push(generatedStarRequest);
                     self.timeoutValidRequests[request.address] =
                         setTimeout(function () {
                             self.removeValidRequest(request.address)
@@ -98,7 +106,7 @@ class RequestValidation {
                 }
             }
         }
-        return isValid;
+        return generatedStarRequest;
     }
 
     removeValidRequest(address) {
@@ -133,14 +141,12 @@ class RequestValidation {
         }
     }
 
-    verifyAddressRequest(starRequest) {
-        var validationRequest = this.requestObject(starRequest.address);
+    async verifyAddressRequest(starRequest) {
+        //No need to fetch validation request as I remove it once it's valid
+        //var validationRequest = this.requestObject(starRequest.address);
         var validRequest = this.requestObjectFromValidMempool(starRequest.address);
-        console.log(validationRequest);
-        console.log(validRequest);
-        console.log(starRequest);
-        if (validRequest && validRequest.isValid
-            && starRequest.star && !starRequest.star.length) {
+        if (validRequest && validRequest.registerStar &&
+            this.isValidStarRequest(starRequest)) {
             let body = {
                 address: starRequest.address,
                 star: {
@@ -152,18 +158,50 @@ class RequestValidation {
                 }
             };
             var newBlock = new Block(body);
-            this.blockchain.addBlock(newBlock);
-            newBlock.storyDecoded = hex2ascii(newBlock.story);
+            newBlock = await this.blockchain.addBlock(newBlock);
+            newBlock = JSON.parse(newBlock);
+            console.log(newBlock);
+            newBlock.body.star.storyDecoded = hex2ascii(newBlock.body.star.story);
+            console.log(newBlock.body.star.storyDecoded);
             return newBlock;
         }
         return null;
     }
 
-    getBlocksByCriteria(address) {
-        return this.blockchain.getBlocksByCriteria(function (block) {
-            var data = JSON.parse(block.body);
-            return data.address == address;
-        })
+    isValidStarRequest(starRequest) {
+        return starRequest.star && !starRequest.star.length &&
+            starRequest.star.dec && starRequest.star.ra &&
+            starRequest.star.story && starRequest.star.story.length < 500;
+    }
+
+    getBlockByHash(hash) {
+        return this.blockchain.getBlockByHash(hash)
+            .then((block) => {
+                if(block){
+                    var starData = block.body;
+                    starData.star.storyDecoded = hex2ascii(starData.star.story);
+                    return starData;
+                }
+                return null;
+            });
+    }
+
+    getBlockByHeight(height) {
+        return this.blockchain.getBlock(height)
+            .then((block) => {
+                if(block){
+                    var starData = block.body;
+                    starData.star.storyDecoded = hex2ascii(starData.star.story);
+                    return starData;
+                }
+                else return null;
+            });
+    }
+
+    async getBlocksByAddress(address) {
+        let blocks = await this.blockchain.getBlocksByAddress(address);
+        blocks.forEach((b) => b.body.star.storyDecoded = hex2ascii(b.body.star.story));
+        return blocks;
     }
 }
 

@@ -12,7 +12,7 @@ class BlockAPI {
     /**
      * Constructor that allows initialize the class 
      */
-    constructor() {
+	constructor() {
 		this.app = express();
 		this.initExpress();
 		this.initExpressMiddleWare();
@@ -32,7 +32,7 @@ class BlockAPI {
      * Initialization of the middleware modules
      */
 	initExpressMiddleWare() {
-		this.app.use(bodyParser.urlencoded({extended:true}));
+		this.app.use(bodyParser.urlencoded({ extended: true }));
 		this.app.use(bodyParser.json());
 	}
 
@@ -46,36 +46,40 @@ class BlockAPI {
 	}
 
 
-	addEndpoints(){
+	addEndpoints() {
 		var self = this;
-		self.app.post("/requestValidation", (req, res) => { 
+		self.app.post("/requestValidation", (req, res) => {
 			var request = self.validation.AddRequestValidation(req.body);
 			res.json(request);
 		});
 
-		self.app.post("/message-signature/validate", (req, res)=>{
+		self.app.post("/message-signature/validate", (req, res) => {
 			var request = self.validation.validateRequestByWallet(req.body.address, req.body.signature);
 			res.json(request);
 		});
 
-
-		self.app.post("/block", (req, res)=>{
-			var request = self.validation.verifyAddressRequest(req.body);
-			res.json(request);
+		self.app.post("/block", async (req, res) => {
+			var request = await self.validation.verifyAddressRequest(req.body);
+			if (request) res.json(request);
+			else res.status(500).send('Either request can\'t be found in MemPool or star data are invalid');
 		});
 
-		self.app.get('/stars:hash', (req, res)=>{
-			self.blockchain.getBlockByHash(req.params.hash).then((block) => {
-				//TODO decode to ascii
-				res.json(JSON.parse(block.body));
-			});
+		self.app.get('/stars/hash::hash', async (req, res) => {
+			var starData = await self.validation.getBlockByHash(req.params.hash);
+			if(starData)res.json(starData);
+			else res.status(500).send('Block Not Found.');
 		});
 
-		self.app.get('/stars/address/:addr', (req, res)=>{
-			self.blockchain.getBlocksByCriteria(req.params.addr).then((blocks) => {
-				//TODO decode to ascii
-				res.json(JSON.parse(blocks));
-			});
+		self.app.get('/block/:height', async (req, res) => {
+			var starData = await self.validation.getBlockByHeight(req.params.height);
+			if(starData)res.json(starData);
+			else res.status(500).send('height is out of bound.');
+		});
+
+		self.app.get('/stars/address::addr', async (req, res) => {
+			console.log('addr: ' + req.params.addr);
+			let blocks = await self.validation.getBlocksByAddress(req.params.addr);
+			res.json(blocks);
 		});
 	}
 

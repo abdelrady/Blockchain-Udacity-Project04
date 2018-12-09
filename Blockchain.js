@@ -5,7 +5,9 @@
 const SHA256 = require('crypto-js/sha256');
 //Importing levelSandbox class
 const LevelSandbox = require('./levelSandbox.js');
-const Block = require('./Block.js')
+const Block = require('./Block.js');
+const hex2ascii =  require('hex2ascii');
+
 // Creating the levelSandbox class object
 const db = new LevelSandbox();
 
@@ -88,7 +90,7 @@ class Blockchain {
   validateBlock(blockHeight) {
     // get block object
     return new Promise((resolve, reject) => {
-      this.getBlock(blockHeight).then((block)=>{
+      this.getBlock(blockHeight).then((block) => {
         // get block hash
         let blockHash = block.hash;
         // remove block hash to test block integrity
@@ -98,9 +100,9 @@ class Blockchain {
         // Compare
         resolve(blockHash === validBlockHash);
       })
-      .catch((err)=>{
+        .catch((err) => {
           reject(err);
-      });
+        });
     });
   }
 
@@ -113,7 +115,7 @@ class Blockchain {
         promises.push(this.validateBlock(i));
 
         // compare blocks hash link
-        if(i < arr.length - 1){
+        if (i < arr.length - 1) {
           let blockHash = arr[i].hash;
           let previousHash = arr[i + 1].previousBlockHash;
           if (blockHash !== previousHash) {
@@ -138,12 +140,16 @@ class Blockchain {
     })
   }
 
-  getBlockByHash(hash){
+  getBlockByHash(hash) {
     return db.getBlockByHash(hash);
   }
 
-  getBlocksByCriteria(predicate){
-      return db.getBlocksByCriteria(predicate);
+  getBlocksByAddress(addr) {
+    return db.getBlocksByCriteria(function (block) {
+      console.log('addr1: ' + addr);
+      console.log('addr2: ' + block["body"]["address"])
+      return block["body"]["address"] == addr;
+    });
   }
 }
 // Export the class

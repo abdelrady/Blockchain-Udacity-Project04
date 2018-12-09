@@ -29,9 +29,15 @@ class LevelSandbox {
     var self = this;
     return new Promise(function (resolve, reject) {
       self.db.get(key, function (err, value) {
-        if (err) {
-          reject(err);
-        } else resolve(JSON.parse(value));
+        if(err){
+          if (err.type == 'NotFoundError') {
+              resolve(undefined);
+          }else {
+              console.log('Block ' + key + ' get failed', err);
+              reject(err);
+          }
+        }
+        else resolve(JSON.parse(value));
       });
     });
   }
@@ -74,8 +80,9 @@ class LevelSandbox {
     return new Promise(function (resolve, reject) {
       self.db.createReadStream()
         .on('data', function (data) {
-          if (data.hash === hash) {
-            block = data;
+          let b = JSON.parse(data.value);
+          if (b.hash === hash) {
+            block = b;
           }
         })
         .on('error', function (err) {
@@ -93,8 +100,9 @@ class LevelSandbox {
     return new Promise(function (resolve, reject) {
       self.db.createReadStream()
         .on('data', function (data) {
-          if (predicate(data)) {
-            blocks.push(data);
+          let block = JSON.parse(data.value);
+          if (predicate(block)) {
+            blocks.push(block);
           }
         })
         .on('error', function (err) {
