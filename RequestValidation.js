@@ -110,18 +110,21 @@ class RequestValidation {
     }
 
     removeValidRequest(address) {
+        console.log('r addr1: ' + address);
         var foundIndex = -1;
         for (var i = 0; i < this.mempoolValid.length; i++) {
+            console.log('r pool[i]: ' + JSON.stringify(this.mempoolValid[i]));
             if (this.mempoolValid[i].status.address == address) {
                 foundIndex = i;
                 break;
             }
         }
+        console.log(foundIndex);
         if (foundIndex >= 0) {
             this.mempoolValid.splice(foundIndex, 1);
         }
-        if (self.timeoutValidRequests.hasOwnProperty(address)) {
-            delete self.timeoutValidRequests[address];
+        if (this.timeoutValidRequests.hasOwnProperty(address)) {
+            delete this.timeoutValidRequests[address];
         }
     }
 
@@ -163,6 +166,9 @@ class RequestValidation {
             console.log(newBlock);
             newBlock.body.star.storyDecoded = hex2ascii(newBlock.body.star.story);
             console.log(newBlock.body.star.storyDecoded);
+            
+            this.removeValidRequest(starRequest.address);
+
             return newBlock;
         }
         return null;
@@ -180,7 +186,7 @@ class RequestValidation {
                 if(block){
                     var starData = block.body;
                     starData.star.storyDecoded = hex2ascii(starData.star.story);
-                    return starData;
+                    return block;
                 }
                 return null;
             });
@@ -192,7 +198,7 @@ class RequestValidation {
                 if(block){
                     var starData = block.body;
                     starData.star.storyDecoded = hex2ascii(starData.star.story);
-                    return starData;
+                    return block;
                 }
                 else return null;
             });
